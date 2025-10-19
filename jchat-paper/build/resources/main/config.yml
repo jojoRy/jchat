@@ -1,0 +1,19 @@
+# 서버 식별자 (비워두면 서버 이름 자동 사용)
+server-id: ""
+# Velocity와 통신할 플러그인 채널
+plugin-channel: "jchat:main"
+
+chat:
+  local-distance: 100.0
+  enable-clickable-names: true
+  log-messages: true
+
+format:
+  global: "<gray>[<green>전체</green>]</gray> <white>{prefix}<click:run_command:'/귓 {display} '><hover:show_text:'<yellow>귓속말 보내기'>{display}</hover></click><gray>: </gray><white>{message}"
+  local:  "<gray>[<aqua>지역</aqua>]</gray> <white>{prefix}<click:run_command:'/귓 {display} '><hover:show_text:'<yellow>귓속말 보내기'>{display}</hover></click><gray>: </gray><white>{message}"
+  admin:  "<gray>[<red>관리자</red>]</gray> <white>{prefix}<click:run_command:'/귓 {display} '><hover:show_text:'<yellow>귓속말 보내기'>{display}</hover></click><gray>: </gray><white>{message}"
+  party:  "<gray>[<light_purple>파티</light_purple>]</gray> <white>{prefix}{display}<gray>: </gray><white>{message}"
+  guild:  "<gray>[<gold>길드</gold>]</gray> <white>{prefix}{display}<gray>: </gray><white>{message}"
+  whisper-send: "<gray>[<light_purple>귓 → {target}</light_purple>]</gray> <white>{message}"
+  whisper-receive: "<gray>[<light_purple>{sender} → 나</light_purple>]</gray> <white>{message}"
+  announce: "<gold>[공지]</gold> <white>{message}"

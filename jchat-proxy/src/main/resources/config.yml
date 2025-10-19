@@ -1,0 +1,22 @@
+plugin-channel: "jchat:main"
+log:
+  mirror-global: true
+  mirror-local: true
+  mirror-admin: true
+  mirror-whisper: true
+  mirror-announce: true
+  mirror-party: true
+  mirror-guild: true
+filters:
+  enabled: true
+  redact: "[검열됨]"
+  patterns:
+    - '(?i)비속어1'
+    - '(?i)욕설\w+'
+routing:
+  global-allow: []
+  local-allow: []
+  admin-allow: []
+mute:
+  uuids: []
+prefer-displayname: true

@@ -1,0 +1,10 @@
+{
+  "id": "jchatproxy",
+  "name": "JChatProxy",
+  "version": "1.0.2",
+  "authors": ["jjory"],
+  "main": "kr.jjory.jchatproxy.JChatProxy",
+  "dependencies": [
+    { "id": "hqframework", "optional": true }
+  ]
+}
