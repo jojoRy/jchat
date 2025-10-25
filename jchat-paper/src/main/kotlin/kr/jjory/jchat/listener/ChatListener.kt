@@ -38,7 +38,12 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                         val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderName).replace("{message}", msg)
                         target.sendMessage(mini.deserialize(recvFmt)); Bukkit.getLogger().info("[WHISPER] $senderName -> ${target.name}: $msg")
                     }
-                    "MODE" -> { Bukkit.getLogger().info("[MODE] ${parts[2]} -> ${parts[3]}") }
+                    "MODE" -> {
+                        val uuid = runCatching { java.util.UUID.fromString(parts[2]) }.getOrNull() ?: return@initHandlers
+                        val mode = runCatching { ChatMode.valueOf(parts[3]) }.getOrNull() ?: ChatMode.GLOBAL
+                        modes.applyRemote(uuid, mode)
+                        Bukkit.getLogger().info("[MODE] $uuid -> ${mode.name}")
+                    }
                     "ANNOUNCE" -> {
                         val msg = parts[1]; val fmt = config.fmtAnnounce.replace("{message}", msg)
                         Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }

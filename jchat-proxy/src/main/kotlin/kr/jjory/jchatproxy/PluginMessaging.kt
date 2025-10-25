@@ -63,7 +63,9 @@ class PluginMessaging @Inject constructor() {
             }
             "MODE" -> {
                 val uuid = UUID.fromString(parts[2]); val mode = parts[3]; val cm = try { ChatMode.valueOf(mode) } catch (_: Throwable) { ChatMode.GLOBAL }
-                store.setMode(uuid, cm); if (cfg.mirrorAdmin) logger.info("[MODE] $uuid -> $mode")
+                store.setMode(uuid, cm)
+                router.broadcast(cfg.channel, raw, "MODE")
+                if (cfg.mirrorAdmin) logger.info("[MODE] $uuid -> $mode")
             }
             "INDEX" -> {
                 val uuid = UUID.fromString(parts[2]); val name = parts[3]; val display = parts[4]
