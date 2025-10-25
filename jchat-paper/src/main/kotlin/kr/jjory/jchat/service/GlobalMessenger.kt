@@ -59,7 +59,7 @@ class GlobalMessenger(private val config: ConfigService, private val logger: Mes
     }
 
     fun simulateReceive(payload: String) {
-        Bukkit.getLogger().info("[JChat/XServer-Recv] $payload"); recv?.invoke(payload)
+        recv?.invoke(payload)
     }
 
     private fun resolveClass(vararg names: String): Class<*>? = names.firstNotNullOfOrNull { name ->

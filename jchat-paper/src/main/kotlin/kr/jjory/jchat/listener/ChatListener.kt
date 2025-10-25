@@ -20,48 +20,83 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                 val parts = payload.split("|", limit = 7)
                 when (parts[0]) {
                     "GLOBAL" -> {
-                        val display = parts[3]; val msg = parts[4]
+                        val origin = parts.getOrNull(1) ?: return@initHandlers
+                        if (origin.equals(config.serverId, true)) return@initHandlers
+                        val display = parts.getOrNull(3) ?: return@initHandlers
+                        val msg = parts.getOrNull(4) ?: return@initHandlers
                         val fmt = config.fmtGlobal.replace("{display}", display).replace("{prefix}", "").replace("{message}", msg)
                         Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
                     }
                     "LOCAL" -> { /* 프록시 단계에선 브로드캐스트만; Paper는 이미 처리함 */ }
-                    "ADMIN" -> { /* 동일 */ }
+                    "ADMIN" -> {
+                        val fromDisplay = parts.getOrNull(3) ?: return@initHandlers
+                        val msg = parts.getOrNull(4) ?: return@initHandlers
+                        val fmt = config.fmtAdmin
+                            .replace("{display}", fromDisplay)
+                            .replace("{prefix}", "")
+                            .replace("{message}", msg)
+                        Bukkit.getOnlinePlayers()
+                            .filter { it.hasPermission("jchat.admin") }
+                            .forEach { it.sendMessage(mini.deserialize(fmt)) }
+                    }
                     "WHISPER" -> {
-                        val senderName = parts[2]; val targetUuidOrName = parts[3]; val msg = parts[4]
-                        val target = Bukkit.getPlayerExact(targetUuidOrName) ?: runCatching { java.util.UUID.fromString(targetUuidOrName) }.getOrNull()?.let { Bukkit.getPlayer(it) } ?: return@initHandlers
+                        val origin = parts.getOrNull(1) ?: return@initHandlers
+                        if (origin.equals(config.serverId, true)) return@initHandlers
+                        val senderName = parts.getOrNull(2) ?: return@initHandlers
+                        val targetUuidOrName = parts.getOrNull(3) ?: return@initHandlers
+                        val msg = parts.getOrNull(4) ?: return@initHandlers
+                        val target = Bukkit.getPlayerExact(targetUuidOrName)
+                            ?: runCatching { java.util.UUID.fromString(targetUuidOrName) }.getOrNull()?.let { Bukkit.getPlayer(it) }
+                            ?: return@initHandlers
                         val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderName).replace("{message}", msg)
                         target.sendMessage(mini.deserialize(recvFmt)); Bukkit.getLogger().info("[WHISPER] $senderName -> ${target.name}: $msg")
                     }
                     "WHISPER_REMOTE" -> {
-                        val senderName = parts[3]; val targetKey = parts[4]; val msg = parts[5]
-                        val target = Bukkit.getOnlinePlayers().firstOrNull { it.name.equals(targetKey, true) || plain.serialize(it.displayName()).equals(targetKey, true) || it.uniqueId.toString().equals(targetKey, true) } ?: return@initHandlers
+                        val origin = parts.getOrNull(1) ?: return@initHandlers
+                        if (origin.equals(config.serverId, true)) return@initHandlers
+                        val senderName = parts.getOrNull(3) ?: return@initHandlers
+                        val targetKey = parts.getOrNull(4) ?: return@initHandlers
+                        val msg = parts.getOrNull(5) ?: return@initHandlers
+                        val target = Bukkit.getOnlinePlayers().firstOrNull {
+                            it.name.equals(targetKey, true) ||
+                                    plain.serialize(it.displayName()).equals(targetKey, true) ||
+                                    it.uniqueId.toString().equals(targetKey, true)
+                        } ?: return@initHandlers
                         val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderName).replace("{message}", msg)
                         target.sendMessage(mini.deserialize(recvFmt)); Bukkit.getLogger().info("[WHISPER] $senderName -> ${target.name}: $msg")
                     }
                     "MODE" -> {
-                        val uuid = runCatching { java.util.UUID.fromString(parts[2]) }.getOrNull() ?: return@initHandlers
-                        val mode = runCatching { ChatMode.valueOf(parts[3]) }.getOrNull() ?: ChatMode.GLOBAL
+                        val uuid = runCatching { java.util.UUID.fromString(parts.getOrNull(2) ?: return@initHandlers) }.getOrNull() ?: return@initHandlers
+                        val mode = runCatching { ChatMode.valueOf(parts.getOrNull(3) ?: return@initHandlers) }.getOrNull() ?: ChatMode.GLOBAL
                         modes.applyRemote(uuid, mode)
                         Bukkit.getLogger().info("[MODE] $uuid -> ${mode.name}")
                     }
                     "ANNOUNCE" -> {
-                        val msg = parts[1]; val fmt = config.fmtAnnounce.replace("{message}", msg)
+                        val msg = parts.getOrNull(1) ?: return@initHandlers
+                        val fmt = config.fmtAnnounce.replace("{message}", msg)
                         Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
                         Bukkit.getLogger().info("[ANNOUNCE] $msg")
                     }
                     "PARTY" -> {
-                        val partyKey = parts[2]; val fromDisplay = parts[4]; val msg = parts[5]
+                        val origin = parts.getOrNull(1) ?: return@initHandlers
+                        if (origin.equals(config.serverId, true)) return@initHandlers
+                        val partyKey = parts.getOrNull(2) ?: return@initHandlers
+                        val fromDisplay = parts.getOrNull(4) ?: return@initHandlers
+                        val msg = parts.getOrNull(5) ?: return@initHandlers
                         val fmt = config.fmtParty.replace("{display}", fromDisplay).replace("{prefix}", "").replace("{message}", msg)
                         Bukkit.getOnlinePlayers().filter { p -> partyGuild.partyKey(p)?.equals(partyKey, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
                     }
                     "GUILD" -> {
-                        val guildKey = parts[2]; val fromDisplay = parts[4]; val msg = parts[5]
+                        val origin = parts.getOrNull(1) ?: return@initHandlers
+                        if (origin.equals(config.serverId, true)) return@initHandlers
+                        val guildKey = parts.getOrNull(2) ?: return@initHandlers
+                        val fromDisplay = parts.getOrNull(4) ?: return@initHandlers
+                        val msg = parts.getOrNull(5) ?: return@initHandlers
                         val fmt = config.fmtGuild.replace("{display}", fromDisplay).replace("{prefix}", "").replace("{message}", msg)
                         Bukkit.getOnlinePlayers().filter { p -> partyGuild.guildKey(p)?.equals(guildKey, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
                     }
                 }
             } catch (_: Throwable) { logger.log("xserver-recv(parse-fail): $payload") }
-            logger.log("xserver-recv: $payload")
         }
     }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
@@ -76,7 +111,6 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                 val fmt = config.fmtGlobal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
                 global.send(kr.jjory.jchat.common.Payloads.global(config.serverId, p.name, plain.serialize(p.displayName()), raw))
-                logger.log("global: ${p.name}: $raw")
             }
             kr.jjory.jchat.model.ChatMode.LOCAL -> {
                 val fmt = config.fmtLocal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
@@ -87,7 +121,7 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
             kr.jjory.jchat.model.ChatMode.ADMIN -> {
                 val fmt = config.fmtAdmin.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 Bukkit.getOnlinePlayers().filter { it.hasPermission("jchat.admin") }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                logger.log("admin: ${p.name}: $raw"); Bukkit.getLogger().info("[ADMIN] ${plain.serialize(p.displayName())}: $raw")
+                global.send(kr.jjory.jchat.common.Payloads.admin(config.serverId,p.name,plain.serialize(p.displayName()),raw))
             }
             kr.jjory.jchat.model.ChatMode.PARTY -> {
                 val key = partyGuild.partyKey(p)
@@ -95,7 +129,6 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                 val fmt = config.fmtParty.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 Bukkit.getOnlinePlayers().filter { pp -> partyGuild.partyKey(pp)?.equals(key, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
                 global.send(kr.jjory.jchat.common.Payloads.party(config.serverId, key, p.name, plain.serialize(p.displayName()), raw))
-                logger.log("party: ${p.name}@$key: $raw")
             }
             kr.jjory.jchat.model.ChatMode.GUILD -> {
                 val key = partyGuild.guildKey(p)
@@ -103,7 +136,6 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                 val fmt = config.fmtGuild.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 Bukkit.getOnlinePlayers().filter { pp -> partyGuild.guildKey(pp)?.equals(key, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
                 global.send(kr.jjory.jchat.common.Payloads.guild(config.serverId, key, p.name, plain.serialize(p.displayName()), raw))
-                logger.log("guild: ${p.name}@$key: $raw")
             }
         }
     }

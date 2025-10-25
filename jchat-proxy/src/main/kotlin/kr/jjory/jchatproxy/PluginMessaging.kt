@@ -45,6 +45,13 @@ class PluginMessaging @Inject constructor() {
                 if (cfg.mirrorGlobal) logger.info("[GLOBAL] $fromDisplay: $filtered")
                 router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.global(serverId, fromName, fromDisplay, filtered), "GLOBAL")
             }
+            "ADMIN" -> {
+                val serverId = parts[1]; val fromName = parts[2]; val fromDisplay = parts[3]; val msg = parts[4]
+                if (moderation.isMuted(fromName)) return
+                val filtered = moderation.filter(msg) ?: return
+                if (cfg.mirrorAdmin) logger.info("[ADMIN] $fromDisplay: $filtered")
+                router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.admin(serverId, fromName, fromDisplay, filtered), "ADMIN")
+            }
             "WHISPER" -> {
                 val serverId = parts[1]; val fromName = parts[2]; val targetKey = parts[3]; val msg = parts[4]
                 if (moderation.isMuted(fromName)) return

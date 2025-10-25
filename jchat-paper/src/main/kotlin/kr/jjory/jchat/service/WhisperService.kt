@@ -25,7 +25,6 @@ class WhisperService(private val config: ConfigService, private val global: Glob
         val recvFmt = config.fmtWhisperReceive.replace("{sender}", from.name).replace("{message}", content)
         from.sendMessage(mini.deserialize(sendFmt)); to.sendMessage(mini.deserialize(recvFmt))
         setLast(from.uniqueId, to.uniqueId); setLast(to.uniqueId, from.uniqueId)
-        logger.log("whisper: ${from.name} -> ${to.name}: $content")
         global.send(kr.jjory.jchat.common.Payloads.whisper(config.serverId, from.name, to.uniqueId.toString(), content))
     }
     fun sendCrossServer(from: Player, targetKey: String, contentRaw: String) {
