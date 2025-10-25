@@ -23,7 +23,6 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                         val display = parts[3]; val msg = parts[4]
                         val fmt = config.fmtGlobal.replace("{display}", display).replace("{prefix}", "").replace("{message}", msg)
                         Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
-                        Bukkit.getLogger().info("[GLOBAL] $display: $msg")
                     }
                     "LOCAL" -> { /* 프록시 단계에선 브로드캐스트만; Paper는 이미 처리함 */ }
                     "ADMIN" -> { /* 동일 */ }
