@@ -31,7 +31,15 @@ class PluginMessaging @Inject constructor() {
     fun register() { server.channelRegistrar.register(id); server.eventManager.register(container, this) }
 
     @Subscribe fun onFirstServer(e: PlayerChooseInitialServerEvent) {}
-    @Subscribe fun onConnected(e: ServerConnectedEvent) {}
+    @Subscribe fun onConnected(e: ServerConnectedEvent) {
+        val player = e.player
+        val mode = store.getMode(player.uniqueId)
+        val payload = kr.jjory.jchat.common.Payloads.mode(player.uniqueId.toString(), mode.name)
+        val ok = router.sendToPlayerServer(cfg.channel, player.uniqueId.toString(), payload)
+        if (!ok) {
+            logger.warn("[JChatProxy] failed to push chat mode ${mode.name} to ${player.username}")
+        }
+    }
     @Subscribe fun onDisconnect(e: DisconnectEvent) { store.unindex(e.player.uniqueId) }
 
     @Subscribe fun onPluginMessage(e: PluginMessageEvent) {

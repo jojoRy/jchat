@@ -1,24 +1,90 @@
 package kr.jjory.jchat.service
 
-import me.clip.placeholderapi.PlaceholderAPI
 import org.bukkit.entity.Player
+import org.bukkit.plugin.Plugin
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 
-/**
- * MMOCore가 설치되어 있지 않거나 API 버전이 달라도 동작하도록
- * PAPI 기반의 키(파티/길드 식별자)를 추출한다.
- * 사용되는 플레이스홀더 후보(비어 있거나 "none"/"null"이면 무시):
- *  - %mmocore_party_id%, %mmocore_party_name%
- *  - %mmocore_guild_id%, %mmocore_guild_name%
- */
-class PartyGuildService {
-    private fun parse(p: Player, ph: String): String? = try {
-        val v = PlaceholderAPI.setPlaceholders(p, ph).trim()
-        if (v.isBlank() || v.equals("none", true) || v.equals("null", true)) null else v
-    } catch (_: Throwable) { null }
+class PartyGuildService(plugin: Plugin) {
+    private val hook: PartyGuildHook? = createHook(plugin)
 
-    fun partyKey(p: Player): String? =
-        parse(p, "%mmocore_party_id%") ?: parse(p, "%mmocore_party_name%")
+    val isHooked: Boolean get() = hook != null
+    val isPartyChatAvailable: Boolean get() = hook?.supportsParty == true
+    val isGuildChatAvailable: Boolean get() = hook?.supportsGuild == true
 
-    fun guildKey(p: Player): String? =
-        parse(p, "%mmocore_guild_id%") ?: parse(p, "%mmocore_guild_name%")
+    fun partyKey(player: Player): String? = hook?.partyKey(player)
+    fun guildKey(player: Player): String? = hook?.guildKey(player)
+
+    private fun createHook(plugin: Plugin): PartyGuildHook? {
+        val mmocore = plugin.server.pluginManager.getPlugin("MMOCore") ?: return null
+        if (!mmocore.isEnabled) return null
+        return runCatching { MMOCoreHook() }
+            .onFailure { plugin.logger.warning("MMOCore API hook failed: ${it.message}") }
+            .getOrNull()
+    }
+}
+
+private interface PartyGuildHook {
+    val supportsParty: Boolean
+    val supportsGuild: Boolean
+
+    fun partyKey(player: Player): String?
+    fun guildKey(player: Player): String?
+}
+
+private class MMOCoreHook : PartyGuildHook {
+    private val playerDataClass = Class.forName("net.Indyuce.mmocore.api.player.PlayerData")
+    private val resolveByPlayer: Method? = playerDataClass.methods.firstOrNull {
+        it.name == "get" && it.parameterCount == 1 && Modifier.isStatic(it.modifiers) &&
+                Player::class.java.isAssignableFrom(it.parameterTypes[0])
+    }?.apply { isAccessible = true }
+    private val resolveByUuid: Method? = playerDataClass.methods.firstOrNull {
+        it.name == "get" && it.parameterCount == 1 && Modifier.isStatic(it.modifiers) &&
+                java.util.UUID::class.java.isAssignableFrom(it.parameterTypes[0])
+    }?.apply { isAccessible = true }
+    private val hasParty: Method? = playerDataClass.methods.firstOrNull { it.name == "hasParty" && it.parameterCount == 0 }?.apply { isAccessible = true }
+    private val getParty: Method? = playerDataClass.methods.firstOrNull { it.name == "getParty" && it.parameterCount == 0 }?.apply { isAccessible = true }
+    private val hasGuild: Method? = playerDataClass.methods.firstOrNull { it.name == "hasGuild" && it.parameterCount == 0 }?.apply { isAccessible = true }
+    private val getGuild: Method? = playerDataClass.methods.firstOrNull { it.name == "getGuild" && it.parameterCount == 0 }?.apply { isAccessible = true }
+
+    override val supportsParty: Boolean = (resolveByPlayer != null || resolveByUuid != null) && hasParty != null && getParty != null
+    override val supportsGuild: Boolean = supportsParty && hasGuild != null && getGuild != null
+
+    override fun partyKey(player: Player): String? {
+        if (!supportsParty || hasParty == null || getParty == null) return null
+        val data = resolve(player) ?: return null
+        val joined = runCatching { hasParty?.invoke(data) as? Boolean }.getOrNull() ?: return null
+        if (!joined) return null
+        val party = runCatching { getParty?.invoke(data) }.getOrNull() ?: return null
+        return extractKey(party)
+    }
+
+    override fun guildKey(player: Player): String? {
+        if (!supportsGuild || hasGuild == null || getGuild == null) return null
+        val data = resolve(player) ?: return null
+        val joined = runCatching { hasGuild?.invoke(data) as? Boolean }.getOrNull() ?: return null
+        if (!joined) return null
+        val guild = runCatching { getGuild?.invoke(data) }.getOrNull() ?: return null
+        return extractKey(guild)
+    }
+
+    private fun resolve(player: Player): Any? {
+        resolveByPlayer?.let { return runCatching { it.invoke(null, player) }.getOrNull() }
+        resolveByUuid?.let { return runCatching { it.invoke(null, player.uniqueId) }.getOrNull() }
+        return null
+    }
+
+    private fun extractKey(target: Any?): String? {
+        if (target == null) return null
+        val type = target::class.java
+        val id = type.methods.firstOrNull { it.name.equals("getId", true) && it.parameterCount == 0 }
+            ?.apply { isAccessible = true }
+            ?.let { runCatching { it.invoke(target) }.getOrNull() }
+        if (id != null) return id.toString()
+        val name = type.methods.firstOrNull { it.name.equals("getName", true) && it.parameterCount == 0 }
+            ?.apply { isAccessible = true }
+            ?.let { runCatching { it.invoke(target) }.getOrNull() }
+        if (name != null) return name.toString()
+        return target.toString()
+    }
 }

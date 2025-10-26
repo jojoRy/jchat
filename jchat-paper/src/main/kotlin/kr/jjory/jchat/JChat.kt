@@ -27,7 +27,7 @@ class JChat : JavaPlugin() {
         globalMessenger = GlobalMessenger(configService, messageLogManager)
         chatModeService = ChatModeService(dataService, globalMessenger)
         prefixResolver = PrefixResolver()
-        partyGuild = PartyGuildService()
+        partyGuild = PartyGuildService(this)
         whisperService = WhisperService(configService, globalMessenger, messageLogManager, prefixResolver, registry)
         channelMessenger = PluginChannelMessenger(this, configService, messageLogManager)
 
@@ -39,11 +39,25 @@ class JChat : JavaPlugin() {
         server.pluginManager.registerEvents(ChatListener(this, configService, chatModeService, globalMessenger, messageLogManager, prefixResolver, partyGuild), this)
         server.pluginManager.registerEvents(PlayerLifecycleListener(registry, chatModeService, dataService, configService, channelMessenger), this)
 
+        if (!partyGuild.isHooked) {
+            logger.info("MMOCore가 감지되지 않아 파티/길드 채팅이 비활성화됩니다.")
+        }
+
         getCommand("전체")?.setExecutor(GlobalCommand(chatModeService))
         getCommand("지역")?.setExecutor(LocalCommand(chatModeService))
         getCommand("관리자")?.setExecutor(AdminCommand(chatModeService))
-        getCommand("파티")?.setExecutor(PartyCommand(chatModeService))
-        getCommand("길드")?.setExecutor(GuildCommand(chatModeService))
+        getCommand("파티")?.setExecutor(
+            if (partyGuild.isPartyChatAvailable)
+                PartyCommand(chatModeService, partyGuild)
+            else
+                DisabledCommand("§c[채팅] MMOCore가 설치되어 있지 않아 파티 채팅을 사용할 수 없습니다.")
+        )
+        getCommand("길드")?.setExecutor(
+            if (partyGuild.isGuildChatAvailable)
+                GuildCommand(chatModeService, partyGuild)
+            else
+                DisabledCommand("§c[채팅] MMOCore가 설치되어 있지 않아 길드 채팅을 사용할 수 없습니다.")
+        )
         getCommand("공지")?.setExecutor(AnnounceCommand(configService, globalMessenger))
         getCommand("귓")?.setExecutor(WhisperCommand(whisperService))
         getCommand("답장")?.setExecutor(ReplyCommand(whisperService))
