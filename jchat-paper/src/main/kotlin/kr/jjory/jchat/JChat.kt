@@ -46,18 +46,8 @@ class JChat : JavaPlugin() {
         getCommand("전체")?.setExecutor(GlobalCommand(chatModeService))
         getCommand("지역")?.setExecutor(LocalCommand(chatModeService))
         getCommand("관리자")?.setExecutor(AdminCommand(chatModeService))
-        getCommand("파티")?.setExecutor(
-            if (partyGuild.isPartyChatAvailable)
-                PartyCommand(chatModeService, partyGuild)
-            else
-                DisabledCommand("§c[채팅] MMOCore가 설치되어 있지 않아 파티 채팅을 사용할 수 없습니다.")
-        )
-        getCommand("길드")?.setExecutor(
-            if (partyGuild.isGuildChatAvailable)
-                GuildCommand(chatModeService, partyGuild)
-            else
-                DisabledCommand("§c[채팅] MMOCore가 설치되어 있지 않아 길드 채팅을 사용할 수 없습니다.")
-        )
+        getCommand("파티")?.setExecutor(PartyCommand(chatModeService, partyGuild))
+        getCommand("길드")?.setExecutor(GuildCommand(chatModeService, partyGuild))
         getCommand("공지")?.setExecutor(AnnounceCommand(configService, globalMessenger))
         getCommand("귓")?.setExecutor(WhisperCommand(whisperService))
         getCommand("답장")?.setExecutor(ReplyCommand(whisperService))

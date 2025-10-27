@@ -13,5 +13,6 @@ allprojects {
         maven("https://maven.hqservice.kr/repository/maven-public")
         maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
         maven("https://nexus.phoenixdevt.fr/repository/maven-public/")
+        maven("https://insert-koin.io/")
     }
 }

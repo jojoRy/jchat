@@ -12,6 +12,7 @@ dependencies {
     compileOnly("kr.hqservice", "hqframework-bukkit-command", "2.0.1-SNAPSHOT")
     compileOnly("kr.hqservice", "hqframework-bukkit-scheduler", "2.0.1-SNAPSHOT")
     compileOnly("kr.hqservice", "hqframework-global-netty", "2.0.1-SNAPSHOT")
+    compileOnly("io.insert-koin", "koin-core-jvm", "4.0.4")
     compileOnly("net.luckperms", "api", "5.4")
     compileOnly("me.clip", "placeholderapi", "2.11.5")
 }

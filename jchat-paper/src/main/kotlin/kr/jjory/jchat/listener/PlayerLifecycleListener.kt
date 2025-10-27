@@ -12,7 +12,7 @@ class PlayerLifecycleListener(private val registry: PlayerRegistry, private val 
     private val plain = PlainTextComponentSerializer.plainText()
     @EventHandler fun onJoin(e: PlayerJoinEvent) {
         val p = e.player; registry.put(p)
-        val restored = modes.get(p.uniqueId); modes.set(p.uniqueId, restored)
+        modes.get(p.uniqueId)
         val display = plain.serialize(p.displayName())
         channel.send(kr.jjory.jchat.common.Payloads.index(config.serverId, p.uniqueId.toString(), p.name, display))
     }
