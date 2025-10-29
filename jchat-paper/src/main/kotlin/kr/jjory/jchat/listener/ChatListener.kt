@@ -1,7 +1,9 @@
 package kr.jjory.jchat.listener
 
 import io.papermc.paper.event.player.AsyncChatEvent
+import kr.jjory.jchat.common.Payloads
 import kr.jjory.jchat.model.ChatMode
+import kr.jjory.jchat.model.ChatMode.*
 import kr.jjory.jchat.service.*
 import me.clip.placeholderapi.PlaceholderAPI
 import net.kyori.adventure.text.minimessage.MiniMessage
@@ -11,7 +13,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 
-class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val config: ConfigService, private val modes: ChatModeService, private val global: GlobalMessenger, private val logger: MessageLogManager, private val prefix: PrefixResolver, private val partyGuild: PartyGuildService) : Listener {
+class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val config: ConfigService, private val modes: ChatModeService, private val global: GlobalMessenger, private val logger: MessageLogManager, private val prefix: PrefixResolver) : Listener {
     private val mini = MiniMessage.miniMessage()
     private val plain = PlainTextComponentSerializer.plainText()
     init {
@@ -79,26 +81,6 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                         Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
                         Bukkit.getLogger().info("[ANNOUNCE] $msg")
                     }
-                    "PARTY" -> {
-                        if (!partyGuild.isPartyChatAvailable) return@initHandlers
-                        val origin = parts.getOrNull(1) ?: return@initHandlers
-                        if (origin.equals(config.serverId, true)) return@initHandlers
-                        val partyKey = parts.getOrNull(2) ?: return@initHandlers
-                        val fromDisplay = parts.getOrNull(4) ?: return@initHandlers
-                        val msg = parts.getOrNull(5) ?: return@initHandlers
-                        val fmt = config.fmtParty.replace("{display}", fromDisplay).replace("{prefix}", "").replace("{message}", msg)
-                        Bukkit.getOnlinePlayers().filter { p -> partyGuild.partyKey(p)?.equals(partyKey, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                    }
-                    "GUILD" -> {
-                        if (!partyGuild.isGuildChatAvailable) return@initHandlers
-                        val origin = parts.getOrNull(1) ?: return@initHandlers
-                        if (origin.equals(config.serverId, true)) return@initHandlers
-                        val guildKey = parts.getOrNull(2) ?: return@initHandlers
-                        val fromDisplay = parts.getOrNull(4) ?: return@initHandlers
-                        val msg = parts.getOrNull(5) ?: return@initHandlers
-                        val fmt = config.fmtGuild.replace("{display}", fromDisplay).replace("{prefix}", "").replace("{message}", msg)
-                        Bukkit.getOnlinePlayers().filter { p -> partyGuild.guildKey(p)?.equals(guildKey, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                    }
                 }
             } catch (_: Throwable) { logger.log("xserver-recv(parse-fail): $payload") }
         }
@@ -111,45 +93,21 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
         raw = try { PlaceholderAPI.setPlaceholders(p, raw) } catch (_: Throwable) { raw } // ✅ PAPI 자동 파싱
         e.viewers().clear(); e.isCancelled = true
         when (mode) {
-            kr.jjory.jchat.model.ChatMode.GLOBAL -> {
+            GLOBAL -> {
                 val fmt = config.fmtGlobal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
-                global.send(kr.jjory.jchat.common.Payloads.global(config.serverId, p.name, plain.serialize(p.displayName()), raw))
+                global.send(Payloads.global(config.serverId, p.name, plain.serialize(p.displayName()), raw))
             }
-            kr.jjory.jchat.model.ChatMode.LOCAL -> {
+            LOCAL -> {
                 val fmt = config.fmtLocal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 val dist = config.localDistance; val loc = p.location
                 p.world.players.filter { it.location.world == loc.world && it.location.distance(loc) <= dist }.forEach { it.sendMessage(mini.deserialize(fmt)) }
                 logger.log("local: ${p.name}: $raw"); Bukkit.getLogger().info("[LOCAL] ${plain.serialize(p.displayName())}: $raw")
             }
-            kr.jjory.jchat.model.ChatMode.ADMIN -> {
+            ADMIN -> {
                 val fmt = config.fmtAdmin.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 Bukkit.getOnlinePlayers().filter { it.hasPermission("jchat.admin") }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                global.send(kr.jjory.jchat.common.Payloads.admin(config.serverId,p.name,plain.serialize(p.displayName()),raw))
-            }
-            kr.jjory.jchat.model.ChatMode.PARTY -> {
-                if (!partyGuild.isPartyChatAvailable) {
-                    p.sendMessage("§c[채팅] MMOCore가 설치되어 있지 않아 파티 채팅을 사용할 수 없습니다. 전체 채팅으로 전환합니다.")
-                    modes.set(p.uniqueId, kr.jjory.jchat.model.ChatMode.GLOBAL)
-                    return
-                }
-                val key = partyGuild.partyKey(p)
-                if (key == null) { p.sendMessage("§c[파티] 파티에 속해있지 않습니다."); return }
-                val fmt = config.fmtParty.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
-                Bukkit.getOnlinePlayers().filter { pp -> partyGuild.partyKey(pp)?.equals(key, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                global.send(kr.jjory.jchat.common.Payloads.party(config.serverId, key, p.name, plain.serialize(p.displayName()), raw))
-            }
-            kr.jjory.jchat.model.ChatMode.GUILD -> {
-                if (!partyGuild.isGuildChatAvailable) {
-                    p.sendMessage("§c[채팅] MMOCore가 설치되어 있지 않아 길드 채팅을 사용할 수 없습니다. 전체 채팅으로 전환합니다.")
-                    modes.set(p.uniqueId, kr.jjory.jchat.model.ChatMode.GLOBAL)
-                    return
-                }
-                val key = partyGuild.guildKey(p)
-                if (key == null) { p.sendMessage("§c[길드] 길드에 속해있지 않습니다."); return }
-                val fmt = config.fmtGuild.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
-                Bukkit.getOnlinePlayers().filter { pp -> partyGuild.guildKey(pp)?.equals(key, true) == true }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                global.send(kr.jjory.jchat.common.Payloads.guild(config.serverId, key, p.name, plain.serialize(p.displayName()), raw))
+                global.send(Payloads.admin(config.serverId,p.name,plain.serialize(p.displayName()),raw))
             }
         }
     }

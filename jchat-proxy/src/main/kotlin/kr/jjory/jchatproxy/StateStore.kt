@@ -3,7 +3,7 @@ package kr.jjory.jchatproxy
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-enum class ChatMode { GLOBAL, LOCAL, ADMIN, PARTY, GUILD }
+enum class ChatMode { GLOBAL, LOCAL, ADMIN }
 
 class StateStore(private val cfg: ProxyConfig) {
     private val modes = ConcurrentHashMap<UUID, ChatMode>()

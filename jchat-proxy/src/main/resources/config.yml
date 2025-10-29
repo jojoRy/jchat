@@ -5,8 +5,6 @@ log:
   mirror-admin: true
   mirror-whisper: true
   mirror-announce: true
-  mirror-party: true
-  mirror-guild: true
 filters:
   enabled: true
   redact: "[검열됨]"

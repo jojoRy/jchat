@@ -16,7 +16,6 @@ class JChat : JavaPlugin() {
     lateinit var globalMessenger: GlobalMessenger
     lateinit var messageLogManager: MessageLogManager
     lateinit var channelMessenger: PluginChannelMessenger
-    lateinit var partyGuild: PartyGuildService
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -27,7 +26,6 @@ class JChat : JavaPlugin() {
         globalMessenger = GlobalMessenger(configService, messageLogManager)
         chatModeService = ChatModeService(dataService, globalMessenger)
         prefixResolver = PrefixResolver()
-        partyGuild = PartyGuildService(this)
         whisperService = WhisperService(configService, globalMessenger, messageLogManager, prefixResolver, registry)
         channelMessenger = PluginChannelMessenger(this, configService, messageLogManager)
 
@@ -36,18 +34,12 @@ class JChat : JavaPlugin() {
         }
         GlobalMessenger.channelSender = { payload -> channelMessenger.send(payload) }
 
-        server.pluginManager.registerEvents(ChatListener(this, configService, chatModeService, globalMessenger, messageLogManager, prefixResolver, partyGuild), this)
+        server.pluginManager.registerEvents(ChatListener(this, configService, chatModeService, globalMessenger, messageLogManager, prefixResolver), this)
         server.pluginManager.registerEvents(PlayerLifecycleListener(registry, chatModeService, dataService, configService, channelMessenger), this)
-
-        if (!partyGuild.isHooked) {
-            logger.info("MMOCore가 감지되지 않아 파티/길드 채팅이 비활성화됩니다.")
-        }
 
         getCommand("전체")?.setExecutor(GlobalCommand(chatModeService))
         getCommand("지역")?.setExecutor(LocalCommand(chatModeService))
         getCommand("관리자")?.setExecutor(AdminCommand(chatModeService))
-        getCommand("파티")?.setExecutor(PartyCommand(chatModeService, partyGuild))
-        getCommand("길드")?.setExecutor(GuildCommand(chatModeService, partyGuild))
         getCommand("공지")?.setExecutor(AnnounceCommand(configService, globalMessenger))
         getCommand("귓")?.setExecutor(WhisperCommand(whisperService))
         getCommand("답장")?.setExecutor(ReplyCommand(whisperService))

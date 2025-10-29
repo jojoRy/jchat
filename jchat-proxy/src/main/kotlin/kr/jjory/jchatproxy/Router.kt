@@ -9,8 +9,6 @@ class Router(private val server: ProxyServer, private val logger: org.slf4j.Logg
             "GLOBAL" -> cfg.routingGlobalAllow
             "LOCAL" -> cfg.routingLocalAllow
             "ADMIN" -> cfg.routingAdminAllow
-            "PARTY" -> emptyList()
-            "GUILD" -> emptyList()
             "MODE" -> emptyList()
             else -> emptyList()
         }

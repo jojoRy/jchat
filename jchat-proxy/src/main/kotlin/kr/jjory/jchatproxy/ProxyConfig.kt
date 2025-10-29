@@ -12,8 +12,6 @@ class ProxyConfig(
     val mirrorAdmin: Boolean,
     val mirrorWhisper: Boolean,
     val mirrorAnnounce: Boolean,
-    val mirrorParty: Boolean,
-    val mirrorGuild: Boolean,
     val filterEnabled: Boolean,
     val filterPatterns: List<String>,
     val filterRedact: String,
@@ -43,8 +41,6 @@ class ProxyConfig(
             val mirrorAdmin = log["mirror-admin"] as? Boolean ?: true
             val mirrorWhisper = log["mirror-whisper"] as? Boolean ?: true
             val mirrorAnnounce = log["mirror-announce"] as? Boolean ?: true
-            val mirrorParty = log["mirror-party"] as? Boolean ?: true
-            val mirrorGuild = log["mirror-guild"] as? Boolean ?: true
 
             val filters = map["filters"] as? Map<String, Any> ?: emptyMap()
             val filterEnabled = filters["enabled"] as? Boolean ?: true
@@ -61,7 +57,7 @@ class ProxyConfig(
 
             val prefer = map["prefer-displayname"] as? Boolean ?: true
 
-            return ProxyConfig(channel, mirrorGlobal, mirrorLocal, mirrorAdmin, mirrorWhisper, mirrorAnnounce, mirrorParty, mirrorGuild,
+            return ProxyConfig(channel, mirrorGlobal, mirrorLocal, mirrorAdmin, mirrorWhisper, mirrorAnnounce,
                 filterEnabled, filterPatterns, filterRedact, routingGlobalAllow, routingLocalAllow, routingAdminAllow,
                 muted, prefer)
         }

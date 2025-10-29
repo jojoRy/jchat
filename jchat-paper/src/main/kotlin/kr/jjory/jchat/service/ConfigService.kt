@@ -17,8 +17,6 @@ class ConfigService(private val plugin: Plugin) {
     val fmtGlobal: String get() = plugin.config.getString("format.global")!!
     val fmtLocal: String get() = plugin.config.getString("format.local")!!
     val fmtAdmin: String get() = plugin.config.getString("format.admin")!!
-    val fmtParty: String get() = plugin.config.getString("format.party")!!
-    val fmtGuild: String get() = plugin.config.getString("format.guild")!!
     val fmtWhisperSend: String get() = plugin.config.getString("format.whisper-send")!!
     val fmtWhisperReceive: String get() = plugin.config.getString("format.whisper-receive")!!
     val fmtAnnounce: String get() = plugin.config.getString("format.announce", "<gold>[공지]</gold> <white>{message}")!!

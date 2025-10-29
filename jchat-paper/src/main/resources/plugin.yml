@@ -3,13 +3,11 @@ main: kr.jjory.jchat.JChat
 version: 1.0.2
 api-version: 1.21
 authors: [ jjory ]
-softdepend: [LuckPerms, PlaceholderAPI, HQFramework, MMOCore]
+softdepend: [LuckPerms, PlaceholderAPI, HQFramework]
 commands:
   전체: { description: 전체 채팅 모드로 전환합니다., permission: jchat.use }
   지역: { description: 지역 채팅 모드로 전환합니다., permission: jchat.use }
   관리자: { description: 관리자 채팅 모드로 전환합니다., permission: jchat.admin }
-  파티: { description: 파티 채팅 모드로 전환합니다., permission: jchat.use }
-  길드: { description: 길드 채팅 모드로 전환합니다., permission: jchat.use }
   공지:
     description: 모든 서버에 공지를 전송합니다.
     usage: /공지 <메시지>

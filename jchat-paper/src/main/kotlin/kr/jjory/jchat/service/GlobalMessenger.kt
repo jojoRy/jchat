@@ -31,7 +31,7 @@ class GlobalMessenger(private val config: ConfigService, private val logger: Mes
             val providerInstance = providerKlass?.let { findSingleton(it) }
             packetSender = providerInstance?.let { inst ->
                 findAccessor(providerKlass, senderKlass, inst)
-            } ?: findSingleton(senderKlass)
+            } ?: findSingleton(senderKlass) ?: findFromKoin(senderKlass)
 
             sendMethod = findSendMethod(senderKlass)
             isBound = packetSender != null && sendMethod != null
@@ -121,6 +121,60 @@ class GlobalMessenger(private val config: ConfigService, private val logger: Mes
                         (method.name == "sendPacketToProxy" || method.name == "send")
             }
             ?.also { it.isAccessible = true }
+    }
+    private fun findFromKoin(targetKlass: Class<*>): Any? {
+        val globalContextKlass = resolveClass("org.koin.core.context.GlobalContext") ?: return null
+        val reflectionKlass = resolveClass("kotlin.jvm.internal.Reflection") ?: return null
+        val kClassKlass = resolveClass("kotlin.reflect.KClass") ?: return null
+
+        val context = runCatching { globalContextKlass.getMethod("get").invoke(null) }.getOrNull() ?: return null
+        val koin = runCatching {
+            context.javaClass.methods.firstOrNull { method ->
+                method.name == "get" && method.parameterCount == 0 && method.returnType.name == "org.koin.core.Koin"
+            }?.apply { isAccessible = true }?.invoke(context)
+        }.getOrNull() ?: return null
+
+        val getOrCreate = runCatching { reflectionKlass.getMethod("getOrCreateKotlinClass", Class::class.java) }.getOrNull()
+            ?: return null
+        val kClass = runCatching { getOrCreate.invoke(null, targetKlass) }.getOrNull() ?: return null
+
+        val qualifierKlass = resolveClass("org.koin.core.qualifier.Qualifier")
+        val function0Klass = resolveClass("kotlin.jvm.functions.Function0")
+        val koinClass = koin.javaClass
+
+        val defaultMethod = runCatching {
+            if (qualifierKlass != null && function0Klass != null) {
+                koinClass.getMethod(
+                    "getOrNull\$default",
+                    koinClass,
+                    kClassKlass,
+                    qualifierKlass,
+                    function0Klass,
+                    Int::class.javaPrimitiveType,
+                    Any::class.java
+                )
+            } else null
+        }.getOrNull()
+
+        if (defaultMethod != null) {
+            defaultMethod.isAccessible = true
+            val resolved = runCatching { defaultMethod.invoke(null, koin, kClass, null, null, 3, null) }.getOrNull()
+            if (resolved != null) return resolved
+        }
+
+        val directMethod = runCatching {
+            koinClass.methods.firstOrNull { method ->
+                method.name == "getOrNull" && method.parameterCount >= 1 && method.parameterTypes[0].name == "kotlin.reflect.KClass"
+            }?.apply { isAccessible = true }
+        }.getOrNull() ?: return null
+
+        val args = when (directMethod.parameterCount) {
+            1 -> arrayOf(kClass)
+            2 -> arrayOf(kClass, null)
+            else -> arrayOf(kClass, null, null)
+        }
+
+        return runCatching { directMethod.invoke(koin, *args) }.getOrNull()
     }
 
     private fun methodsOf(klass: Class<*>): Sequence<Method> = sequence {

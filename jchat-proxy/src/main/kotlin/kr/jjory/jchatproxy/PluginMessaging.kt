@@ -91,18 +91,6 @@ class PluginMessaging @Inject constructor() {
                 if (cfg.mirrorAnnounce) logger.info("[ANNOUNCE] $filtered")
                 router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.announce(filtered), "GLOBAL")
             }
-            "PARTY" -> {
-                val partyKey = parts[2]; val fromName = parts[3]; val fromDisplay = parts[4]; val msg = parts[5]
-                val filtered = moderation.filter(msg) ?: return
-                if (cfg.mirrorParty) logger.info("[PARTY:$partyKey] $fromDisplay: $filtered")
-                router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.party(parts[1], partyKey, fromName, fromDisplay, filtered), "PARTY")
-            }
-            "GUILD" -> {
-                val guildKey = parts[2]; val fromName = parts[3]; val fromDisplay = parts[4]; val msg = parts[5]
-                val filtered = moderation.filter(msg) ?: return
-                if (cfg.mirrorGuild) logger.info("[GUILD:$guildKey] $fromDisplay: $filtered")
-                router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.guild(parts[1], guildKey, fromName, fromDisplay, filtered), "GUILD")
-            }
         }
     }
 }
