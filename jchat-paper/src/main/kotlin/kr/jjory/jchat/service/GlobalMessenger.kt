@@ -12,7 +12,7 @@ class GlobalMessenger(private val config: ConfigService, private val logger: Mes
     private var isBound = false
 
     companion object {
-        var channelSender: ((String) -> Unit)? = null
+        var channelSender: ((String) -> Boolean)? = null
     }
 
     fun tryBind(): Boolean {
@@ -47,15 +47,27 @@ class GlobalMessenger(private val config: ConfigService, private val logger: Mes
         recv = onReceive
     }
 
-    fun send(payload: String) {
+    fun send(payload: String): Boolean {
         if (tryBind()) {
             try {
-                sendMethod!!.invoke(packetSender, payload); logger.log("xserver-send: $payload"); return
+                sendMethod!!.invoke(packetSender, payload)
+                logger.log("xserver-send: $payload")
+                return true
             } catch (t: Throwable) {
                 Bukkit.getLogger().warning("[JChat] HQ Netty send 실패: ${t.message}")
             }
         }
-        channelSender?.invoke(payload) ?: logger.log("xserver-send(no-netty): $payload")
+
+        val sender = channelSender ?: run {
+            logger.log("xserver-send(no-netty): $payload")
+            return false
+        }
+        return try {
+            sender.invoke(payload)
+        } catch (t: Throwable) {
+            Bukkit.getLogger().warning("[JChat] Channel send 실패: ${t.message}")
+            false
+        }
     }
 
     fun simulateReceive(payload: String) {

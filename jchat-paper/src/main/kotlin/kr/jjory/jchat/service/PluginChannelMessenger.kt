@@ -14,10 +14,11 @@ class PluginChannelMessenger(private val plugin: Plugin, private val config: Con
             try { incomingHandler?.invoke(String(message, Charsets.UTF_8)) } catch (t: Throwable) { Bukkit.getLogger().warning("[JChat] Incoming channel parse fail: ${t.message}") }
         })
     }
-    fun send(payload: String) {
+    fun send(payload: String): Boolean {
         val data = payload.toByteArray(Charsets.UTF_8)
-        val carrier: Player = Bukkit.getOnlinePlayers().firstOrNull() ?: return
+        val carrier: Player = Bukkit.getOnlinePlayers().firstOrNull() ?: return false
         carrier.sendPluginMessage(plugin, config.channel, data)
         logger.log("proxy-send: $payload")
+        return true
     }
 }

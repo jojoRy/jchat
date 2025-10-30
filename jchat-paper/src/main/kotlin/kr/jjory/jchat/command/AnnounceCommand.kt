@@ -3,6 +3,7 @@ package kr.jjory.jchat.command
 import kr.jjory.jchat.service.ConfigService
 import kr.jjory.jchat.service.GlobalMessenger
 import kr.jjory.jchat.common.Payloads
+import kr.jjory.jchat.common.ColorCodeFormatter
 import me.clip.placeholderapi.PlaceholderAPI
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
@@ -21,11 +22,13 @@ class AnnounceCommand(private val cfg: ConfigService, private val net: GlobalMes
             is Player -> try { PlaceholderAPI.setPlaceholders(sender, raw) } catch (_: Throwable) { raw }
             else -> raw
         }
-        // 로컬 표시
-        val formatted = cfg.fmtAnnounce.replace("{message}", parsed)
-        Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(formatted)) }
-        // 프록시에 브로드캐스트
-        net.send(Payloads.announce(parsed))
+        val allowColors = sender !is Player || sender.isOp
+        val processed = ColorCodeFormatter.apply(parsed, allowColors)
+        val formatted = cfg.fmtAnnounce.replace("{message}", processed)
+        val delivered = net.send(Payloads.announce(processed))
+        if (!delivered) {
+            Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(formatted)) }
+        }
         sender.sendMessage("§a[공지] 전 서버에 방송했습니다.")
         return true
     }

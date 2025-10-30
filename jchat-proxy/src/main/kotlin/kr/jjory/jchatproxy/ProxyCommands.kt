@@ -3,7 +3,9 @@ package kr.jjory.jchatproxy
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.command.RawCommand
 import com.velocitypowered.api.plugin.PluginContainer
+import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
+import kr.jjory.jchat.common.ColorCodeFormatter
 
 class ProxyCommands(private val server: ProxyServer, private val logger: org.slf4j.Logger, private val moderation: Moderation, private val router: Router, private val cfg: ProxyConfig, private val container: PluginContainer) {
     fun register() { server.commandManager.register(server.commandManager.metaBuilder("jchatproxy").plugin(container).build(), Root()) }
@@ -14,8 +16,17 @@ class ProxyCommands(private val server: ProxyServer, private val logger: org.slf
             when (args[0].lowercase()) {
                 "mute" -> { if (args.size < 2) { reply(src, "Usage: /jchatproxy mute <uuid-or-name>"); return }; moderation.mute(args[1]); reply(src, "Muted ${args[1]}") }
                 "unmute" -> { if (args.size < 2) { reply(src, "Usage: /jchatproxy unmute <uuid-or-name>"); return }; moderation.unmute(args[1]); reply(src, "Unmuted ${args[1]}") }
-                "announce" -> { if (args.size < 2) { reply(src, "Usage: /jchatproxy announce <message>"); return }; val msg = args.drop(1).joinToString(" "); router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.announce(msg), "GLOBAL"); reply(src, "Announced.") }
-                else -> help(src)
+                "announce" -> {
+                    if (args.size < 2) { reply(src, "Usage: /jchatproxy announce <message>"); return }
+                    val msg = args.drop(1).joinToString(" ")
+                    val allowColors = when (src) {
+                        is Player -> src.hasPermission("jchat.admin")
+                        else -> true
+                    }
+                    val processed = ColorCodeFormatter.apply(msg, allowColors)
+                    router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.announce(processed), "GLOBAL")
+                    reply(src, "Announced.")
+                }else -> help(src)
             }
         }
         private fun help(src: CommandSource) { reply(src, "/jchatproxy mute <uuid-or-name>\n/jchatproxy unmute <uuid-or-name>\n/jchatproxy announce <message>") }

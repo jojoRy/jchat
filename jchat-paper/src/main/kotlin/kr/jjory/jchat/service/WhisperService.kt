@@ -1,5 +1,6 @@
 package kr.jjory.jchat.service
 
+import kr.jjory.jchat.common.ColorCodeFormatter
 import me.clip.placeholderapi.PlaceholderAPI
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -21,11 +22,12 @@ class WhisperService(private val config: ConfigService, private val global: Glob
     fun sendWhisper(from: Player, to: Player, contentRaw: String) {
         if (from.uniqueId == to.uniqueId) { from.sendMessage("§c자기 자신에게는 귓속말을 보낼 수 없습니다."); return }
         val content = try { PlaceholderAPI.setPlaceholders(from, contentRaw) } catch (_: Throwable) { contentRaw }
-        val sendFmt = config.fmtWhisperSend.replace("{target}", to.name).replace("{message}", content)
-        val recvFmt = config.fmtWhisperReceive.replace("{sender}", from.name).replace("{message}", content)
+        val processed = ColorCodeFormatter.apply(content, from.isOp)
+        val sendFmt = config.fmtWhisperSend.replace("{target}", to.name).replace("{message}", processed)
+        val recvFmt = config.fmtWhisperReceive.replace("{sender}", from.name).replace("{message}", processed)
         from.sendMessage(mini.deserialize(sendFmt)); to.sendMessage(mini.deserialize(recvFmt))
         setLast(from.uniqueId, to.uniqueId); setLast(to.uniqueId, from.uniqueId)
-        global.send(kr.jjory.jchat.common.Payloads.whisper(config.serverId, from.name, to.uniqueId.toString(), content))
+        global.send(kr.jjory.jchat.common.Payloads.whisper(config.serverId, from.name, to.uniqueId.toString(), processed))
     }
     fun sendCrossServer(from: Player, targetKey: String, contentRaw: String) {
         val pd = plain.serialize(from.displayName())
@@ -33,7 +35,8 @@ class WhisperService(private val config: ConfigService, private val global: Glob
             from.sendMessage("§c자기 자신에게는 귓속말을 보낼 수 없습니다."); return
         }
         val content = try { PlaceholderAPI.setPlaceholders(from, contentRaw) } catch (_: Throwable) { contentRaw }
-        global.send(kr.jjory.jchat.common.Payloads.whisperRemote(config.serverId, from.uniqueId.toString(), from.name, targetKey, content))
+        val processed = ColorCodeFormatter.apply(content, from.isOp)
+        global.send(kr.jjory.jchat.common.Payloads.whisperRemote(config.serverId, from.uniqueId.toString(), from.name, targetKey, processed))
         from.sendMessage("§d[귓속말] §7(다른 서버의 §f$targetKey§7 에게 보냈습니다) §f$content")
     }
 }

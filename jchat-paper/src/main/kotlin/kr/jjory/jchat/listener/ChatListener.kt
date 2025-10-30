@@ -5,6 +5,7 @@ import kr.jjory.jchat.common.Payloads
 import kr.jjory.jchat.model.ChatMode
 import kr.jjory.jchat.model.ChatMode.*
 import kr.jjory.jchat.service.*
+import kr.jjory.jchat.common.ColorCodeFormatter
 import me.clip.placeholderapi.PlaceholderAPI
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -91,23 +92,24 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
         val p = e.player; val mode = modes.get(p.uniqueId)
         var raw = plain.serialize(e.message())
         raw = try { PlaceholderAPI.setPlaceholders(p, raw) } catch (_: Throwable) { raw } // ✅ PAPI 자동 파싱
+        val processed = ColorCodeFormatter.apply(raw, p.isOp)
         e.viewers().clear(); e.isCancelled = true
         when (mode) {
             GLOBAL -> {
-                val fmt = config.fmtGlobal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
+                val fmt = config.fmtLocal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", processed)
                 Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
-                global.send(Payloads.global(config.serverId, p.name, plain.serialize(p.displayName()), raw))
+                global.send(Payloads.global(config.serverId, p.name, plain.serialize(p.displayName()), processed))
             }
             LOCAL -> {
                 val fmt = config.fmtLocal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
                 val dist = config.localDistance; val loc = p.location
                 p.world.players.filter { it.location.world == loc.world && it.location.distance(loc) <= dist }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                logger.log("local: ${p.name}: $raw"); Bukkit.getLogger().info("[LOCAL] ${plain.serialize(p.displayName())}: $raw")
+                logger.log("local: ${p.name}: $processed"); Bukkit.getLogger().info("[LOCAL] ${plain.serialize(p.displayName())}: $processed")
             }
             ADMIN -> {
-                val fmt = config.fmtAdmin.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", raw)
+                val fmt = config.fmtAdmin.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", processed)
                 Bukkit.getOnlinePlayers().filter { it.hasPermission("jchat.admin") }.forEach { it.sendMessage(mini.deserialize(fmt)) }
-                global.send(Payloads.admin(config.serverId,p.name,plain.serialize(p.displayName()),raw))
+                global.send(Payloads.admin(config.serverId, p.name, plain.serialize(p.displayName()), processed))
             }
         }
     }

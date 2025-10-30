@@ -14,4 +14,4 @@ format:
   admin:  "<gray>[<red>관리자</red>]</gray> <white>{prefix}<click:run_command:'/귓 {display} '><hover:show_text:'<yellow>귓속말 보내기'>{display}</hover></click><gray>: </gray><white>{message}"
   whisper-send: "<gray>[<light_purple>귓 → {target}</light_purple>]</gray> <white>{message}"
   whisper-receive: "<gray>[<light_purple>{sender} → 나</light_purple>]</gray> <white>{message}"
-  announce: "<gold>[공지]</gold> <white>{message}"
+  announce: "{message}"
