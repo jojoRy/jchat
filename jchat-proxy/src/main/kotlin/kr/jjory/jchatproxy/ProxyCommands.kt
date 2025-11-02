@@ -5,6 +5,7 @@ import com.velocitypowered.api.command.RawCommand
 import com.velocitypowered.api.plugin.PluginContainer
 import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
+import kr.jjory.jchat.common.AnnounceFormatter
 import kr.jjory.jchat.common.ColorCodeFormatter
 
 class ProxyCommands(private val server: ProxyServer, private val logger: org.slf4j.Logger, private val moderation: Moderation, private val router: Router, private val cfg: ProxyConfig, private val container: PluginContainer) {
@@ -24,7 +25,8 @@ class ProxyCommands(private val server: ProxyServer, private val logger: org.slf
                         else -> true
                     }
                     val processed = ColorCodeFormatter.apply(msg, allowColors)
-                    router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.announce(processed), "GLOBAL")
+                    val padded = AnnounceFormatter.surroundWithBlankLines(processed)
+                    router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.announce(padded), "GLOBAL")
                     reply(src, "Announced.")
                 }else -> help(src)
             }

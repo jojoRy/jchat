@@ -1,6 +1,7 @@
 package kr.jjory.jchat.listener
 
 import io.papermc.paper.event.player.AsyncChatEvent
+import kr.jjory.jchat.common.AnnounceFormatter
 import kr.jjory.jchat.common.Payloads
 import kr.jjory.jchat.model.ChatMode
 import kr.jjory.jchat.model.ChatMode.*
@@ -78,7 +79,8 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                     }
                     "ANNOUNCE" -> {
                         val msg = parts.getOrNull(1) ?: return@initHandlers
-                        val fmt = config.fmtAnnounce.replace("{message}", msg)
+                        val padded = AnnounceFormatter.surroundWithBlankLines(msg)
+                        val fmt = config.fmtAnnounce.replace("{message}", padded)
                         Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
                         Bukkit.getLogger().info("[ANNOUNCE] $msg")
                     }
@@ -96,7 +98,7 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
         e.viewers().clear(); e.isCancelled = true
         when (mode) {
             GLOBAL -> {
-                val fmt = config.fmtLocal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", processed)
+                val fmt = config.fmtGlobal.replace("{display}", plain.serialize(p.displayName())).replace("{prefix}", prefix.prefixOf(p)).replace("{message}", processed)
                 Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(fmt)) }
                 global.send(Payloads.global(config.serverId, p.name, plain.serialize(p.displayName()), processed))
             }

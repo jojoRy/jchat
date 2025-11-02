@@ -10,6 +10,7 @@ import com.velocitypowered.api.plugin.PluginContainer
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.messages.ChannelIdentifier
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
+import kr.jjory.jchat.common.AnnounceFormatter
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -89,7 +90,8 @@ class PluginMessaging @Inject constructor() {
             "ANNOUNCE" -> {
                 val msg = parts[1]; val filtered = moderation.filter(msg) ?: return
                 if (cfg.mirrorAnnounce) logger.info("[ANNOUNCE] $filtered")
-                router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.announce(filtered), "GLOBAL")
+                val padded = AnnounceFormatter.surroundWithBlankLines(filtered)
+                router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.announce(padded), "GLOBAL")
             }
         }
     }

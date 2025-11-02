@@ -2,6 +2,7 @@ package kr.jjory.jchat.command
 
 import kr.jjory.jchat.service.ConfigService
 import kr.jjory.jchat.service.GlobalMessenger
+import kr.jjory.jchat.common.AnnounceFormatter
 import kr.jjory.jchat.common.Payloads
 import kr.jjory.jchat.common.ColorCodeFormatter
 import me.clip.placeholderapi.PlaceholderAPI
@@ -24,12 +25,12 @@ class AnnounceCommand(private val cfg: ConfigService, private val net: GlobalMes
         }
         val allowColors = sender !is Player || sender.isOp
         val processed = ColorCodeFormatter.apply(parsed, allowColors)
-        val formatted = cfg.fmtAnnounce.replace("{message}", processed)
-        val delivered = net.send(Payloads.announce(processed))
+        val padded = AnnounceFormatter.surroundWithBlankLines(processed)
+        val formatted = cfg.fmtAnnounce.replace("{message}", padded)
+        val delivered = net.send(Payloads.announce(padded))
         if (!delivered) {
             Bukkit.getOnlinePlayers().forEach { it.sendMessage(mini.deserialize(formatted)) }
         }
-        sender.sendMessage("§a[공지] 전 서버에 방송했습니다.")
         return true
     }
 }
