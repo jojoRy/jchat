@@ -62,20 +62,20 @@ class PluginMessaging @Inject constructor() {
                 router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.admin(serverId, fromName, fromDisplay, filtered), "ADMIN")
             }
             "WHISPER" -> {
-                val serverId = parts[1]; val fromName = parts[2]; val targetKey = parts[3]; val msg = parts[4]
+                val serverId = parts[1]; val fromName = parts[2]; val fromDisplay = parts[3]; val targetKey = parts[4]; val msg = parts[5]
                 if (moderation.isMuted(fromName)) return
                 val filtered = moderation.filter(msg) ?: return
-                if (cfg.mirrorWhisper) logger.info("[WHISPER] $fromName -> $targetKey: $filtered")
-                val ok = router.sendToPlayerServer(cfg.channel, targetKey, kr.jjory.jchat.common.Payloads.whisper(serverId, fromName, targetKey, filtered))
-                if (!ok) { router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.whisper(serverId, fromName, targetKey, filtered), "GLOBAL") }
+                if (cfg.mirrorWhisper) logger.info("[WHISPER] $fromDisplay -> $targetKey: $filtered")
+                val ok = router.sendToPlayerServer(cfg.channel, targetKey, kr.jjory.jchat.common.Payloads.whisper(serverId, fromName, fromDisplay, targetKey, filtered))
+                if (!ok) { router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.whisper(serverId, fromName, fromDisplay, targetKey, filtered), "GLOBAL") }
             }
             "WHISPER_REMOTE" -> {
-                val serverId = parts[1]; val fromUuid = parts[2]; val fromName = parts[3]; val targetKey = parts[4]; val msg = parts[5]
+                val serverId = parts[1]; val fromUuid = parts[2]; val fromName = parts[3]; val fromDisplay = parts[4]; val targetKey = parts[5]; val msg = parts[6]
                 if (moderation.isMuted(fromName)) return
                 val filtered = moderation.filter(msg) ?: return
-                if (cfg.mirrorWhisper) logger.info("[WHISPER] $fromName -> $targetKey: $filtered")
-                val ok = router.sendToPlayerServer(cfg.channel, targetKey, kr.jjory.jchat.common.Payloads.whisperRemote(serverId, fromUuid, fromName, targetKey, filtered))
-                if (!ok) { router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.whisperRemote(serverId, fromUuid, fromName, targetKey, filtered), "GLOBAL") }
+                if (cfg.mirrorWhisper) logger.info("[WHISPER] $fromDisplay -> $targetKey: $filtered")
+                val ok = router.sendToPlayerServer(cfg.channel, targetKey, kr.jjory.jchat.common.Payloads.whisperRemote(serverId, fromUuid, fromName, fromDisplay, targetKey, filtered))
+                if (!ok) { router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.whisperRemote(serverId, fromUuid, fromName, fromDisplay, targetKey, filtered), "GLOBAL") }
             }
             "MODE" -> {
                 val uuid = UUID.fromString(parts[2]); val mode = parts[3]; val cm = try { ChatMode.valueOf(mode) } catch (_: Throwable) { ChatMode.GLOBAL }

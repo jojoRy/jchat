@@ -35,7 +35,7 @@ class GlobalMessenger(private val config: ConfigService, private val logger: Mes
 
             sendMethod = findSendMethod(senderKlass)
             isBound = packetSender != null && sendMethod != null
-            if (!isBound) Bukkit.getLogger().warning("[JChat] HQ Netty 바인딩 실패: PacketSender not found")
+            if (!isBound) logger.log("hq-netty-bind-failed: PacketSender not found")
             isBound
         } catch (t: Throwable) {
             Bukkit.getLogger().warning("[JChat] HQ Netty 연결 불가: ${t.message}")
