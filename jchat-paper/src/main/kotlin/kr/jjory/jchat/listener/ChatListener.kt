@@ -21,7 +21,7 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
     init {
         global.initHandlers { payload ->
             try {
-                val parts = payload.split("|", limit = 7)
+                val parts = payload.split("|", limit = 8)
                 when (parts[0]) {
                     "GLOBAL" -> {
                         val origin = parts.getOrNull(1) ?: return@initHandlers
@@ -49,27 +49,35 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                         val origin = parts.getOrNull(1) ?: return@initHandlers
                         if (origin.equals(config.serverId, true)) return@initHandlers
                         val senderName = parts.getOrNull(2) ?: return@initHandlers
-                        val targetUuidOrName = parts.getOrNull(3) ?: return@initHandlers
-                        val msg = parts.getOrNull(4) ?: return@initHandlers
+                        val senderDisplay = parts.getOrNull(3) ?: return@initHandlers
+                        val targetUuidOrName = parts.getOrNull(4) ?: return@initHandlers
+                        val msg = parts.getOrNull(5) ?: return@initHandlers
                         val target = Bukkit.getPlayerExact(targetUuidOrName)
                             ?: runCatching { java.util.UUID.fromString(targetUuidOrName) }.getOrNull()?.let { Bukkit.getPlayer(it) }
                             ?: return@initHandlers
-                        val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderName).replace("{message}", msg)
+                        val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderDisplay).replace("{message}", msg)
                         target.sendMessage(mini.deserialize(recvFmt)); Bukkit.getLogger().info("[WHISPER] $senderName -> ${target.name}: $msg")
                     }
                     "WHISPER_REMOTE" -> {
                         val origin = parts.getOrNull(1) ?: return@initHandlers
                         if (origin.equals(config.serverId, true)) return@initHandlers
                         val senderName = parts.getOrNull(3) ?: return@initHandlers
-                        val targetKey = parts.getOrNull(4) ?: return@initHandlers
-                        val msg = parts.getOrNull(5) ?: return@initHandlers
+                        val senderDisplay = parts.getOrNull(4) ?: return@initHandlers
+                        val targetKey = parts.getOrNull(5) ?: return@initHandlers
+                        val msg = parts.getOrNull(6) ?: return@initHandlers
                         val target = Bukkit.getOnlinePlayers().firstOrNull {
                             it.name.equals(targetKey, true) ||
                                     plain.serialize(it.displayName()).equals(targetKey, true) ||
                                     it.uniqueId.toString().equals(targetKey, true)
                         } ?: return@initHandlers
-                        val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderName).replace("{message}", msg)
+                        val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderDisplay).replace("{message}", msg)
                         target.sendMessage(mini.deserialize(recvFmt)); Bukkit.getLogger().info("[WHISPER] $senderName -> ${target.name}: $msg")
+                    }
+                    "WHISPER_FAIL" -> {
+                        val requestUuid = parts.getOrNull(3) ?: return@initHandlers
+                        val requester = runCatching { java.util.UUID.fromString(requestUuid) }.getOrNull()?.let { Bukkit.getPlayer(it) }
+                            ?: return@initHandlers
+                        requester.sendMessage("§c대상을 찾을 수 없습니다.")
                     }
                     "MODE" -> {
                         val uuid = runCatching { java.util.UUID.fromString(parts.getOrNull(2) ?: return@initHandlers) }.getOrNull() ?: return@initHandlers
