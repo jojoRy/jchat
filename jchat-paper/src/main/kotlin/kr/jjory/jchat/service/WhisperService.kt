@@ -39,6 +39,6 @@ class WhisperService(private val config: ConfigService, private val global: Glob
         val content = try { PlaceholderAPI.setPlaceholders(from, contentRaw) } catch (_: Throwable) { contentRaw }
         val processed = ColorCodeFormatter.apply(content, from.isOp)
         global.send(kr.jjory.jchat.common.Payloads.whisperRemote(config.serverId, from.uniqueId.toString(), from.name, pd, targetKey, processed))
-        from.sendMessage("§d[귓속말] §7(다른 서버의 §f$targetKey§7 에게 보냈습니다) §f$content")
+        from.sendMessage("§d[귓속말] §7(다른 서버의 §f$targetKey§7 에게 전송을 시도합니다) §f$content")
     }
 }

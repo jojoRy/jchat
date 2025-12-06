@@ -74,8 +74,13 @@ class PluginMessaging @Inject constructor() {
                 if (moderation.isMuted(fromName)) return
                 val filtered = moderation.filter(msg) ?: return
                 if (cfg.mirrorWhisper) logger.info("[WHISPER] $fromDisplay -> $targetKey: $filtered")
-                val ok = router.sendToPlayerServer(cfg.channel, targetKey, kr.jjory.jchat.common.Payloads.whisperRemote(serverId, fromUuid, fromName, fromDisplay, targetKey, filtered))
-                if (!ok) { router.broadcast(cfg.channel, kr.jjory.jchat.common.Payloads.whisperRemote(serverId, fromUuid, fromName, fromDisplay, targetKey, filtered), "GLOBAL") }
+                val targetUuid = store.find(targetKey)
+                if (targetUuid == null) {
+                    router.sendToPlayerServer(cfg.channel, fromUuid, kr.jjory.jchat.common.Payloads.whisperFail(serverId, targetKey, fromUuid))
+                    return
+                }
+                val ok = router.sendToPlayerServer(cfg.channel, targetUuid.toString(), kr.jjory.jchat.common.Payloads.whisperRemote(serverId, fromUuid, fromName, fromDisplay, targetKey, filtered))
+                if (!ok) { router.sendToPlayerServer(cfg.channel, fromUuid, kr.jjory.jchat.common.Payloads.whisperFail(serverId, targetKey, fromUuid)) }
             }
             "MODE" -> {
                 val uuid = UUID.fromString(parts[2]); val mode = parts[3]; val cm = try { ChatMode.valueOf(mode) } catch (_: Throwable) { ChatMode.GLOBAL }

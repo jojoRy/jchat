@@ -73,6 +73,12 @@ class ChatListener(private val plugin: org.bukkit.plugin.Plugin, private val con
                         val recvFmt = config.fmtWhisperReceive.replace("{sender}", senderDisplay).replace("{message}", msg)
                         target.sendMessage(mini.deserialize(recvFmt)); Bukkit.getLogger().info("[WHISPER] $senderName -> ${target.name}: $msg")
                     }
+                    "WHISPER_FAIL" -> {
+                        val requestUuid = parts.getOrNull(3) ?: return@initHandlers
+                        val requester = runCatching { java.util.UUID.fromString(requestUuid) }.getOrNull()?.let { Bukkit.getPlayer(it) }
+                            ?: return@initHandlers
+                        requester.sendMessage("§c대상을 찾을 수 없습니다.")
+                    }
                     "MODE" -> {
                         val uuid = runCatching { java.util.UUID.fromString(parts.getOrNull(2) ?: return@initHandlers) }.getOrNull() ?: return@initHandlers
                         val mode = runCatching { ChatMode.valueOf(parts.getOrNull(3) ?: return@initHandlers) }.getOrNull() ?: ChatMode.GLOBAL
